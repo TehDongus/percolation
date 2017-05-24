@@ -1,5 +1,5 @@
 # percolation
-percolation assignment from Coursera: Princeton University 
+This is assignment 1 from Coursera course:  Princeton University Algorithms 1 with Robbert Sedgewick and Kevin Wayne. 
 
 Uses edu.princeton.cs.algs4.WeightedQuickUnionUF from their free library.
 
