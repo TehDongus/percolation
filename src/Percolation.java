@@ -1,167 +1,114 @@
 import edu.princeton.cs.algs4.WeightedQuickUnionUF;
-
 /**
- * Created by Victor on 5/15/2017.
+ * Created by Victor Avelar on 6/4/2019
+ * This new version deals with backwash by creating another instance of WeightedQuickUnionUF, whilest the first version
+ * failed the backwash test.
  */
-public class Percolation {
-
+public class Percolation{
     private WeightedQuickUnionUF uf;
-    private boolean[] pointIsBlocked; //value of true means a blocked point
-    private int n;
+    private WeightedQuickUnionUF backwashUF;
+    private boolean[] grid;
     private int openSites = 0;
+    private int n;
+    private final int TOP, BOTTOM; //imaginary top and bottom index
 
     // create n-by-n grid, with all sites blocked
     public Percolation(int n) {
+        if(n <= 0){
+            throw new IllegalArgumentException("n cannot be smaller than 1");
+        }
         this.n = n;
+        int size = (n*n)+2;
+        TOP = (n*n);
+        BOTTOM = (n*n)+1;
 
-        pointIsBlocked = new boolean[n*n];
-        for (int i = 0; i < pointIsBlocked.length; i++) {
-            pointIsBlocked[i] = true;
-        }
+        this.grid = new boolean[size]; //Use top left corner as 0,0
+        this.uf = new WeightedQuickUnionUF(size); //top left corner as 0,0
+        this.backwashUF = new WeightedQuickUnionUF(size);
 
-        uf = new WeightedQuickUnionUF(n*n+2);
-        //top row with single point
-        for (int i = 0; i < n; i++) {
-            uf.union(n*n,i);
-        }
-
-        //bottom row with single point
-        for (int i = (n*(n-1)); i < n*n; i++) {
-            uf.union((n*n+1), i);
-        }
     }
 
     // open site (row, col) if it is not open already
     public void open(int row, int col) {
-        if(pointIsBlocked[convertRowColumnToArrayIndex(row, col)]) {
-            pointIsBlocked[convertRowColumnToArrayIndex(row, col)] = false;
+        validateBounds(row, col);
+
+        //if site is closed (i.e. false) set to open (true) and increment openSites
+        if(!grid[toIndex(row,col)]){
+            grid[toIndex(row,col)] = true;
             openSites++;
-
-            //runs if site to open has 4 touching sites
-            if(row < n && row > 1 && col < n && col > 1) {
-                //connects to top
-                if(!pointIsBlocked[convertRowColumnToArrayIndex(row-1, col)])
-                    uf.union(convertRowColumnToArrayIndex(row-1, col), convertRowColumnToArrayIndex(row,col));
-                //connects to left
-                if(!pointIsBlocked[convertRowColumnToArrayIndex(row, col-1)])
-                    uf.union(convertRowColumnToArrayIndex(row, col), convertRowColumnToArrayIndex(row,col-1));
-                //connects to right
-                if(!pointIsBlocked[convertRowColumnToArrayIndex(row, col+1)])
-                    uf.union(convertRowColumnToArrayIndex(row, col), convertRowColumnToArrayIndex(row,col+1));
-                //connects to bottom
-                if(!pointIsBlocked[convertRowColumnToArrayIndex(row+1, col)])
-                    uf.union(convertRowColumnToArrayIndex(row, col), convertRowColumnToArrayIndex(row+1,col));
-
+            //connects to virtual top
+            if(row == 1){
+                union(toIndex(row, col), TOP);
             }
-            //top
-            else if(row == 1) {
-                //top left
-                if(col == 1) {
-                    if(!pointIsBlocked[convertRowColumnToArrayIndex(row, col+1)])
-                        uf.union(convertRowColumnToArrayIndex(row, col), convertRowColumnToArrayIndex(row,col+1));
-                    if(!pointIsBlocked[convertRowColumnToArrayIndex(row+1, col)])
-                        uf.union(convertRowColumnToArrayIndex(row, col), convertRowColumnToArrayIndex(row+1,col));
-                }
-                //top right
-                else if(col == n) {
-                    if(!pointIsBlocked[convertRowColumnToArrayIndex(row, col-1)])
-                        uf.union(convertRowColumnToArrayIndex(row, col), convertRowColumnToArrayIndex(row,col-1));
-                    if(!pointIsBlocked[convertRowColumnToArrayIndex(row+1, col)])
-                        uf.union(convertRowColumnToArrayIndex(row, col), convertRowColumnToArrayIndex(row+1,col));
-                }
-                //top middle
-                else {
-                    if(!pointIsBlocked[convertRowColumnToArrayIndex(row, col-1)])
-                        uf.union(convertRowColumnToArrayIndex(row, col), convertRowColumnToArrayIndex(row, col-1));
-                    if(!pointIsBlocked[convertRowColumnToArrayIndex(row, col+1)])
-                        uf.union(convertRowColumnToArrayIndex(row, col), convertRowColumnToArrayIndex(row, col+1));
-                    if(!pointIsBlocked[convertRowColumnToArrayIndex(row+1, col)])
-                        uf.union(convertRowColumnToArrayIndex(row, col), convertRowColumnToArrayIndex(row+1, col));
-                }
-
+            //connects to top if open
+            if(row != 1 && grid[toIndex(row-1,col)]){
+                union(toIndex(row, col), toIndex(row-1, col));
             }
-            //bottom
-            else if(row == n ){
-                //bottom left
-                if(col == 1) {
-                    if(!pointIsBlocked[convertRowColumnToArrayIndex(row-1, col)])
-                        uf.union(convertRowColumnToArrayIndex(row-1, col), convertRowColumnToArrayIndex(row, col));
-                    if(!pointIsBlocked[convertRowColumnToArrayIndex(row, col+1)])
-                        uf.union(convertRowColumnToArrayIndex(row, col), convertRowColumnToArrayIndex(row, col+1));
-                }
-                //bottom right
-                else if(col == n) {
-                    if(!pointIsBlocked[convertRowColumnToArrayIndex(row-1, col)])
-                        uf.union(convertRowColumnToArrayIndex(row-1, col), convertRowColumnToArrayIndex(row, col));
-                    if(!pointIsBlocked[convertRowColumnToArrayIndex(row, col-1)])
-                        uf.union(convertRowColumnToArrayIndex(row, col), convertRowColumnToArrayIndex(row, col-1));
-                }
-                //bottom middle
-                else {
-                    if(!pointIsBlocked[convertRowColumnToArrayIndex(row-1, col)])
-                        uf.union(convertRowColumnToArrayIndex(row-1, col), convertRowColumnToArrayIndex(row, col));
-                    if(!pointIsBlocked[convertRowColumnToArrayIndex(row, col-1)])
-                        uf.union(convertRowColumnToArrayIndex(row, col), convertRowColumnToArrayIndex(row, col-1));
-                    if(!pointIsBlocked[convertRowColumnToArrayIndex(row,col+1)])
-                        uf.union(convertRowColumnToArrayIndex(row, col), convertRowColumnToArrayIndex(row, col+1));
-                }
+            //connects to right if open
+            if(col != n && grid[toIndex(row, col+1)]){
+                union(toIndex(row, col), toIndex(row, col+1));
             }
-            //left
-            else if(col == 1) {
-                if(!pointIsBlocked[convertRowColumnToArrayIndex(row-1, col)])
-                    uf.union(convertRowColumnToArrayIndex(row-1, col), convertRowColumnToArrayIndex(row, col));
-                if(!pointIsBlocked[convertRowColumnToArrayIndex(row, col+1)])
-                    uf.union(convertRowColumnToArrayIndex(row, col), convertRowColumnToArrayIndex(row, col+1));
-                if(!pointIsBlocked[convertRowColumnToArrayIndex(row+1,col)])
-                    uf.union(convertRowColumnToArrayIndex(row, col), convertRowColumnToArrayIndex(row + 1, col));
+            //connects to left if open
+            if(col != 1 && grid[toIndex(row,col-1)]){
+                union(toIndex(row, col), toIndex(row, col-1));
             }
-            //right
-            else if(col == n) {
-                if(!pointIsBlocked[convertRowColumnToArrayIndex(row-1, col)])
-                    uf.union(convertRowColumnToArrayIndex(row-1, col), convertRowColumnToArrayIndex(row, col));
-                if(!pointIsBlocked[convertRowColumnToArrayIndex(row, col-1)])
-                    uf.union(convertRowColumnToArrayIndex(row, col), convertRowColumnToArrayIndex(row, col-1));
-                if(!pointIsBlocked[convertRowColumnToArrayIndex(row+1, col)])
-                    uf.union(convertRowColumnToArrayIndex(row, col), convertRowColumnToArrayIndex(row + 1, col));
+            //connects to bottom if open
+            if(row != n && grid[toIndex(row+1,col)]){
+                union(toIndex(row, col), toIndex(row+1, col));
+            }
+            //connects to virtual bottom
+            if(row >= n){
+                backwashUF.union(toIndex(row, col), BOTTOM);
             }
         }
     }
 
     // is site (row, col) open?
-    public boolean isOpen(int row, int col) {
-        return !pointIsBlocked[convertRowColumnToArrayIndex(row, col)];
-
+    public boolean isOpen(int row, int col){
+        validateBounds(row, col);
+        return grid[toIndex(row,col)];
     }
 
     // is site (row, col) full?
-    public boolean isFull(int row, int col) {
-        //if connected to top and not blocked
-        return (uf.connected(convertRowColumnToArrayIndex(row, col), n*n) &&
-                !pointIsBlocked[convertRowColumnToArrayIndex(row, col)]);
+    public boolean isFull(int row, int col){
+        validateBounds(row, col);
+        return uf.connected(toIndex(row,col), TOP) && isOpen(row,col);
     }
 
     // number of open sites
-    public int numberOfOpenSites(){
+    public int numberOfOpenSites() {
         return openSites;
     }
 
     // does the system percolate?
     public boolean percolates() {
-        return uf.connected(n*n, n*n+1);
+        return backwashUF.connected(TOP, BOTTOM);
     }
 
-    private int convertRowColumnToArrayIndex(int row, int col){
-        if (row <= n && col <= n && row >= 0 && col >= 0){
-            return ((row-1)*n)+(col-1);
-        }
-        else{
-            throw new IndexOutOfBoundsException("The row or column is out of range");
+    private void validateBounds(int row, int col) {
+        if(row <= 0 || row > n || col <= 0 || col > n){
+            throw new IllegalArgumentException("row and col must be inclusively in the range of 1 and n");
         }
     }
 
+    //convert 2d array index i(1 <= i <= n) to 1d array index i (0 <= i < n)
+    private int toIndex(int row, int col){
+        return ((row-1)*n)+(col-1);
+    }
 
-    // test client (optional)
-    public static void main(String[] args)  {
+    private void union(int p, int q){
+        uf.union(p, q);
+        backwashUF.union(p, q);
+    }
 
+    //test client (optional)
+    public static void main(String[] args){
+//        Percolation perc = new Percolation(10);
+//        perc.open(2,2);
+//        perc.open(3,2);
+//        perc.open(2,1);
+//        perc.open(2,3);
+//        perc.open(1,2);
+//        System.out.println(perc.uf.connected(perc.toIndex(2,2), perc.toIndex(3,2)));
     }
 }
