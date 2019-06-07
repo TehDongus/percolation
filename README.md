@@ -5,7 +5,7 @@ This is assignment 1 from [Coursera course:  Princeton University Algorithms 1 w
 
 Uses edu.princeton.cs.algs4.WeightedQuickUnionUF from their [free library](https://algs4.cs.princeton.edu/code/).
 
-My submission got an 99/100 with backwash resolved. The missing point was due to failing a minor test (I called a function 2 more times than was in percolationstats than was necessary, however this has no real impact on performance)
+My submission got an 99/100 with backwash resolved. The missing point was due to failing a minor test (I called some functions 2-3 more times in percolationstats than was necessary, however this has no real impact on performance)
 
 Snippit of feedback log:
 Count calls to StdStats.mean() and StdStats.stddev()
